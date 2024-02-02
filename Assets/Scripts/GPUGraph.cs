@@ -58,7 +58,14 @@ public class GraphGPU : MonoBehaviour   // C# script to manage a compute shader
 
     private void Update()
     {
-        UpdateFunctionOnGPU();
+        // 1. update data for compute shader
+        UpdateFunctionOnGPU();  
+
+
+        // 2. update data for rendering, i.e. send data to the shader that the material below used.
+        float step = 2f / resolution;
+        material.SetBuffer(positionsId, positionsBuffer);
+        material.SetFloat(stepId, step);
         var bounds = new Bounds(Vector3.zero, Vector3.one * (2f + 2f / resolution));
         Graphics.DrawMeshInstancedProcedural(mesh,0,material,bounds,positionsBuffer.count);
     }

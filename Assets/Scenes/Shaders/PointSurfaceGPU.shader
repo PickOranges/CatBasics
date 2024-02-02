@@ -18,7 +18,7 @@ Shader "Graph/Point Surface GPU"
         // To set up the instance data manually, add per-instance data to this function in the same way you would normally add per-instance data to a shader. Unity also calls this function at the beginning of a fragment shader if any of the fetched instance properties are included in the fragment shader.
         // This "procedural drawing" is similar to GPU Instancting, only you manually set the GPU function that will calculate the per-instance data for you,
         // instead of pass per-instance data from CPU side via C# script.
-        #pragma instancing_options procedural:ConfigureProcedural  // the def of the function ConfigureProcedural is bellow.
+        #pragma instancing_options assumeuniformscaling procedural:ConfigureProcedural  // the def of the function ConfigureProcedural is bellow.
         #pragma target 4.5
 
         struct Input
@@ -27,6 +27,8 @@ Shader "Graph/Point Surface GPU"
         };
 
         float _Smoothness;
+
+        float _Step;
 
         // ReadOnly, cannot be modified. This is for reading each box's position data from GPU,
         // which calculated by compute shader we wrote.
@@ -42,6 +44,13 @@ Shader "Graph/Point Surface GPU"
         void ConfigureProcedural () {
             #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
                 float3 position = _Positions[unity_InstanceID];
+
+                unity_ObjectToWorld = 0.0;
+				unity_ObjectToWorld._m03_m13_m23_m33 = float4(position, 1.0);   // translation
+				unity_ObjectToWorld._m00_m11_m22 = _Step;   // scaling
+                // BUT why? Model transformation should not include a scaling.
+                // Does that mean we combined MVP transformations into one single matrix?
+                // Is the scaling factor belong to "P"(perspective projection) matrix?
 		    #endif
         }
 

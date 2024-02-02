@@ -909,7 +909,7 @@ MonoBehaviour:
   resolution: 10
   function: 0
   computeShader: {fileID: 7200000, guid: a83c3b66b3d91f8438441dfe7a702df8, type: 3}
-  material: {fileID: 2100000, guid: ff2a2674e448b7a4b828ad5a9d1733da, type: 2}
+  material: {fileID: 2100000, guid: bb6b63069e86a9b4ca065d11c8afdbf3, type: 2}
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
