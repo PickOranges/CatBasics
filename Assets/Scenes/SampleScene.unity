@@ -903,13 +903,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1828639249}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5671b967c5e7b0e488a68cd0a1fdacd9, type: 3}
+  m_Script: {fileID: 11500000, guid: 282379b7f611cb747a5f52fcbbfde3c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pointPrefab: {fileID: 6657663722535137213, guid: 447499acc2d15dd46aa746fd8a7e4c25,
-    type: 3}
-  resolution: 100
-  function: 6
+  resolution: 10
+  function: 0
+  computeShader: {fileID: 7200000, guid: a83c3b66b3d91f8438441dfe7a702df8, type: 3}
+  material: {fileID: 2100000, guid: ff2a2674e448b7a4b828ad5a9d1733da, type: 2}
+  mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
