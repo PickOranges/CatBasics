@@ -4,7 +4,9 @@ using static FunctionLibrary;
 
 public class GraphGPU : MonoBehaviour   // C# script to manage a compute shader
 {
-    [SerializeField,Range(10,1000)]
+    const int maxResolution = 1000;
+
+    [SerializeField,Range(10, maxResolution)]
     int resolution=10;
 
     [SerializeField]
@@ -46,7 +48,10 @@ public class GraphGPU : MonoBehaviour   // C# script to manage a compute shader
 
     void OnEnable()
     {
-        positionsBuffer = new ComputeBuffer(resolution * resolution, 3 * 4);
+        // Because the ComputeBuffer cannot be resized, thus we allocate with max count of points,
+        // in this way we can make compute shader update points according to different resolutions 
+        // we changed in play mode via inspector.
+        positionsBuffer = new ComputeBuffer(maxResolution * maxResolution, 3 * 4);
     }
 
     void OnDisable()
@@ -67,7 +72,8 @@ public class GraphGPU : MonoBehaviour   // C# script to manage a compute shader
         material.SetBuffer(positionsId, positionsBuffer);
         material.SetFloat(stepId, step);
         var bounds = new Bounds(Vector3.zero, Vector3.one * (2f + 2f / resolution));
-        Graphics.DrawMeshInstancedProcedural(mesh,0,material,bounds,positionsBuffer.count);
+        //Graphics.DrawMeshInstancedProcedural(mesh,0,material,bounds,positionsBuffer.count);
+        Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, resolution * resolution);
     }
 
 }
