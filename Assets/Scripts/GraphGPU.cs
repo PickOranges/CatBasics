@@ -4,7 +4,7 @@ using static FunctionLibrary;
 
 public class GraphGPU : MonoBehaviour   // C# script to manage a compute shader
 {
-    [SerializeField,Range(10,200)]
+    [SerializeField,Range(10,1000)]
     int resolution=10;
 
     [SerializeField]
