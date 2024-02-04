@@ -906,10 +906,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 282379b7f611cb747a5f52fcbbfde3c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  resolution: 10
+  resolution: 1000
   function: 0
   computeShader: {fileID: 7200000, guid: a83c3b66b3d91f8438441dfe7a702df8, type: 3}
-  material: {fileID: 2100000, guid: bb6b63069e86a9b4ca065d11c8afdbf3, type: 2}
+  material: {fileID: 2100000, guid: bade527413a61f1408a0c1bcb1af793a, type: 2}
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
