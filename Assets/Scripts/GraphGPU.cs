@@ -35,10 +35,14 @@ public class GraphGPU : MonoBehaviour   // C# script to manage a compute shader
         computeShader.SetFloat(stepId, step);
         computeShader.SetFloat(timeId, Time.time);
 
-        computeShader.SetBuffer(0, positionsId, positionsBuffer);
+
+        // following functions use var kernelIndex as param
+        var kernelIndex = (int)function;
+
+        computeShader.SetBuffer(kernelIndex, positionsId, positionsBuffer);
 
         int groups = Mathf.CeilToInt(resolution / 8f);
-        computeShader.Dispatch(0, groups, groups, 1);
+        computeShader.Dispatch(kernelIndex, groups, groups, 1);
     }
 
     //private void Awake()
