@@ -70,7 +70,7 @@ public class Fractal : MonoBehaviour
             // Means that if you change the new ref' value, you also change the original data, because there was only one copy of data on heap.
             //parts[li] = levelParts;  
 
-            Debug.Log("level size: " + parts[li].Length);
+            //Debug.Log("level size: " + parts[li].Length);
         }
     }
 
@@ -100,6 +100,7 @@ public class Fractal : MonoBehaviour
                     parentTransform.localPosition +
                     parentTransform.localRotation *
                     (1.5f * part.transform.localScale.x * part.direction);
+                levelParts[fpi] = part;
             }
         }
     }
