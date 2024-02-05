@@ -9,21 +9,27 @@ public class Fractal : MonoBehaviour
     {
         name=depth.ToString();
 
-        if(depth<=1) return;    
+        if(depth<=1) return;
 
-        // create Child 1
+        // S1. create children 
+        Fractal childA = CreateChild(Vector3.up);
+        Fractal childB = CreateChild(Vector3.right);
+        // S2. bind them to the parent
+        childA.transform.SetParent(transform, false);
+        childB.transform.SetParent(transform, false);
+        // Note:
+        // We don't bind to parent immediately, because that will change the hiarchy of the parent,
+        // and by the time of creating the 2nd child, it will take both parent and its 1st child as the reference,
+        // thus the result is wrong.
+        // Solution: create all children, then bind them to parent one-by-one.
+    }
+
+    Fractal CreateChild(Vector3 direction)
+    {
         Fractal child = Instantiate(this);
-        child.depth = depth-1;
-        // assign the parent's TF to the child, and then change it to correct position.
-        child.transform.SetParent(transform, false);
-        child.transform.localPosition = 0.75f * Vector3.right; // decrease the distance and shrink the size of ball each recursion
-        child.transform.localScale = 0.5f * Vector3.one;
-
-        // create Child 2
-        child = Instantiate(this);
         child.depth = depth - 1;
-        child.transform.SetParent(transform, false);
-        child.transform.localPosition = 0.75f * Vector3.up;
+        child.transform.localPosition = 0.75f * direction;
         child.transform.localScale = 0.5f * Vector3.one;
+        return child;
     }
 }
