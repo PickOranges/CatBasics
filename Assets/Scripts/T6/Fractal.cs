@@ -7,7 +7,7 @@ public class Fractal : MonoBehaviour
 
     private void Start()
     {
-        name=depth.ToString();
+        name = depth.ToString();
 
         if(depth<=1) return;
 
@@ -28,6 +28,11 @@ public class Fractal : MonoBehaviour
         // and by the time of creating the 2nd child, it will take both parent and its 1st child as the reference,
         // thus the result is wrong.
         // Solution: create all children, then bind them to parent one-by-one.
+    }
+
+    void Update()
+    {
+        transform.Rotate(0f, 22.5f * Time.deltaTime, 0f);
     }
 
     Fractal CreateChild(Vector3 direction, Quaternion rotation)
