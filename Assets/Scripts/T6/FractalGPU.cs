@@ -16,6 +16,7 @@ public class FractalGPU : MonoBehaviour
     Matrix4x4[][] matrices;
     ComputeBuffer[] matricesBuffers;
     static readonly int matricesId = Shader.PropertyToID("_Matrices");  // This is for read data into shader for rendering
+    static MaterialPropertyBlock propertyBlock;
 
     static Vector3[] directions = {
         Vector3.up, Vector3.right, Vector3.left, Vector3.forward, Vector3.back
@@ -75,6 +76,14 @@ public class FractalGPU : MonoBehaviour
                 }
             } 
         }
+
+
+
+        //if (propertyBlock == null)
+        //{
+        //    propertyBlock = new MaterialPropertyBlock();
+        //}
+        propertyBlock ??= new MaterialPropertyBlock();  // a simplified version of above
     }
 
     // This function makes it possible, that we can change some params in inspector in play mode.
@@ -105,6 +114,8 @@ public class FractalGPU : MonoBehaviour
 
         rootPart.spinAngle += spinAngleDelta;
         rootPart.worldRotation = rootPart.rotation * Quaternion.Euler(0f, rootPart.spinAngle, 0f);
+       
+
         parts[0][0] = rootPart;
         matrices[0][0] = Matrix4x4.TRS(
             rootPart.worldPosition, rootPart.worldRotation, Vector3.one
@@ -123,13 +134,11 @@ public class FractalGPU : MonoBehaviour
             {
                 FractalPart parent = parentParts[fpi / 5];
                 FractalPart part = levelParts[fpi];
-                // ???? should NOT be left-multiplication ???
-                // Because the deltaRotation is actually the very first local rotation !!!!
+                
                 rootPart.spinAngle += spinAngleDelta;
-                //part.worldRotation = parent.worldRotation *
-                //                    (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f)); 
-                part.worldRotation=parent.worldRotation *
-                                    (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f));
+                part.worldRotation = parent.worldRotation *
+                                     (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f));
+
                 part.worldPosition =
                     parent.worldPosition +
                     parent.worldRotation * (1.5f * scale * part.direction);
@@ -140,6 +149,10 @@ public class FractalGPU : MonoBehaviour
             }
         }
 
+
+
+
+
         var bounds = new Bounds(Vector3.zero, 3f * Vector3.one);
         // 1. Send data to GPU after finish the calculation
         // 2. And then call the function for procedural drawing
@@ -147,8 +160,11 @@ public class FractalGPU : MonoBehaviour
         {
             ComputeBuffer buffer = matricesBuffers[i];
             buffer.SetData(matrices[i]);
-            material.SetBuffer(matricesId, buffer);
-            Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count);
+            //material.SetBuffer(matricesId, buffer);
+            //Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count);
+
+            propertyBlock.SetBuffer(matricesId, buffer);
+            Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count, propertyBlock);
         }
     }
 }
