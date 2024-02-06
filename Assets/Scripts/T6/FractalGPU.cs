@@ -15,6 +15,7 @@ public class FractalGPU : MonoBehaviour
     FractalPart[][] parts;
     Matrix4x4[][] matrices;
     ComputeBuffer[] matricesBuffers;
+    static readonly int matricesId = Shader.PropertyToID("_Matrices");  // This is for read data into shader for rendering
 
     static Vector3[] directions = {
         Vector3.up, Vector3.right, Vector3.left, Vector3.forward, Vector3.back
@@ -125,8 +126,10 @@ public class FractalGPU : MonoBehaviour
                 // ???? should NOT be left-multiplication ???
                 // Because the deltaRotation is actually the very first local rotation !!!!
                 rootPart.spinAngle += spinAngleDelta;
-                part.worldRotation = parent.worldRotation *
-                                    (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f)); 
+                //part.worldRotation = parent.worldRotation *
+                //                    (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f)); 
+                part.worldRotation=parent.worldRotation *
+                                    (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f));
                 part.worldPosition =
                     parent.worldPosition +
                     parent.worldRotation * (1.5f * scale * part.direction);
@@ -137,11 +140,15 @@ public class FractalGPU : MonoBehaviour
             }
         }
 
-
-        // Send data to GPU after finish the calculation
+        var bounds = new Bounds(Vector3.zero, 3f * Vector3.one);
+        // 1. Send data to GPU after finish the calculation
+        // 2. And then call the function for procedural drawing
         for (int i = 0; i < matricesBuffers.Length; i++)
         {
-            matricesBuffers[i].SetData(matrices[i]);
+            ComputeBuffer buffer = matricesBuffers[i];
+            buffer.SetData(matrices[i]);
+            material.SetBuffer(matricesId, buffer);
+            Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count);
         }
     }
 }
