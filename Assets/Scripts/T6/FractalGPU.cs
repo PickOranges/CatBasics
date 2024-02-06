@@ -76,6 +76,16 @@ public class FractalGPU : MonoBehaviour
         }
     }
 
+    // This function makes it possible, that we can change some params in inspector in play mode.
+    private void OnValidate()
+    {
+        if (parts != null && enabled)
+        {
+            OnDisable();
+            OnEnable();
+        }
+    }
+
     void OnDisable()
     {
         for (int i = 0; i < matricesBuffers.Length; i++)
@@ -125,6 +135,13 @@ public class FractalGPU : MonoBehaviour
                 );
                 levelParts[fpi] = part;
             }
+        }
+
+
+        // Send data to GPU after finish the calculation
+        for (int i = 0; i < matricesBuffers.Length; i++)
+        {
+            matricesBuffers[i].SetData(matrices[i]);
         }
     }
 }
