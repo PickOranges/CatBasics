@@ -13,7 +13,6 @@ public class Fractal : MonoBehaviour
     Material material;
 
     FractalPart[][] parts;
-    GameObject[][] gos;
 
     static Vector3[] directions = {
         Vector3.up, Vector3.right, Vector3.left, Vector3.forward, Vector3.back
@@ -52,11 +51,9 @@ public class Fractal : MonoBehaviour
     {
         // S1. create a vector
         parts = new FractalPart[depth][ ];
-        gos = new GameObject[depth][];
         for (int i = 0, length = 1; i < parts.Length; i++, length *= 5)
         {
             parts[i] = new FractalPart[length];
-            gos[i]= new GameObject[length];
         }
 
         // S2. then fill it
