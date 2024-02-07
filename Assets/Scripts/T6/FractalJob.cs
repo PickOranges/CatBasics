@@ -133,6 +133,7 @@ public class FractalJob : MonoBehaviour
 
 
         float scale = objectScale;
+        JobHandle jobHandle = default;
         for (int li = 1; li < parts.Length; li++)
         {
             scale *= 0.5f;
@@ -152,8 +153,11 @@ public class FractalJob : MonoBehaviour
 
             // Don't have to invoke Execute everytime, let the job system do it.
             // NOTE: if you don't call Complete, the jobs will not be done automatically.    
-            job.Schedule(parts[li].Length, default).Complete();  
+            //job.Schedule(parts[li].Length, default).Complete();  
+
+            jobHandle = job.Schedule(parts[li].Length, default);
         }
+        jobHandle.Complete();
 
 
 
