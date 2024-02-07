@@ -35,7 +35,7 @@ public class FractalJob : MonoBehaviour
         public float scale;
         [ReadOnly] public NativeArray<FractalPart> parents;
         public NativeArray<FractalPart> parts;
-        [WriteOnly] public NativeArray<Matrix4x4> matrices;
+        [WriteOnly] public NativeArray<float3x4> matrices;
         public void Execute(int i) 
         {
             FractalPart parent = parents[i / 5];
@@ -44,12 +44,14 @@ public class FractalJob : MonoBehaviour
             part.worldRotation = mul(parent.worldRotation, mul(part.rotation, quaternion.RotateY(part.spinAngle)));
             part.worldPosition = parent.worldPosition + mul(parent.worldRotation, 1.5f * scale * part.direction);
             parts[i] = part;
-            matrices[i] = float4x4.TRS(part.worldPosition, part.worldRotation, float3(scale));
+
+            float3x3 r = float3x3(part.worldRotation) * scale;
+            matrices[i] = float3x4(r.c0, r.c1, r.c2, part.worldPosition);
         }
     }
 
     NativeArray<FractalPart>[] parts;
-    NativeArray<Matrix4x4>[] matrices;
+    NativeArray<float3x4>[] matrices;
 
     ComputeBuffer[] matricesBuffers;
     static readonly int matricesId = Shader.PropertyToID("_Matrices"); 
@@ -72,13 +74,13 @@ public class FractalJob : MonoBehaviour
     {
         
         parts = new NativeArray<FractalPart>[depth];
-        matrices = new NativeArray<Matrix4x4>[depth];
+        matrices = new NativeArray<float3x4>[depth];
         matricesBuffers = new ComputeBuffer[depth];
-        int stride = 16 * 4;
+        int stride = 12 * 4;  // homogenous transformation, the last row is always 0,0,0,1, thus ignore it.
         for (int i = 0, length = 1; i < parts.Length; i++, length *= 5)
         {
             parts[i] = new NativeArray<FractalPart>(length, Allocator.Persistent);
-            matrices[i]= new NativeArray<Matrix4x4>(length, Allocator.Persistent);
+            matrices[i]= new NativeArray<float3x4>(length, Allocator.Persistent);
             matricesBuffers[i] = new ComputeBuffer(length, stride);  
         }
 
@@ -129,8 +131,9 @@ public class FractalJob : MonoBehaviour
         rootPart.worldPosition = transform.position;
         parts[0][0] = rootPart;
         float objectScale = transform.lossyScale.x;
-        matrices[0][0] = float4x4.TRS(rootPart.worldPosition, rootPart.worldRotation, float3(objectScale));
-        
+        float3x3 r = float3x3(rootPart.worldRotation) * objectScale;
+        matrices[0][0] = float3x4(r.c0, r.c1, r.c2, rootPart.worldPosition);
+
         float scale = objectScale;
         JobHandle jobHandle = default;
         for (int li = 1; li < parts.Length; li++)
