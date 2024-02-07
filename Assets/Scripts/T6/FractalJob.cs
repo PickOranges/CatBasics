@@ -1,6 +1,9 @@
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
-public class FractalGPU : MonoBehaviour
+public class FractalJob : MonoBehaviour
 {
     [SerializeField, Range(1, 8)]
     int depth = 4;
@@ -11,10 +14,10 @@ public class FractalGPU : MonoBehaviour
     [SerializeField]
     Material material;
 
-    FractalPart[][] parts;
-    Matrix4x4[][] matrices;
+    NativeArray<FractalPart>[] parts;
+    NativeArray<Matrix4x4>[] matrices;
     ComputeBuffer[] matricesBuffers;
-    static readonly int matricesId = Shader.PropertyToID("_Matrices");  // This is for read data into shader for rendering
+    static readonly int matricesId = Shader.PropertyToID("_Matrices"); 
     static MaterialPropertyBlock propertyBlock;
 
     static Vector3[] directions = {
@@ -31,9 +34,6 @@ public class FractalGPU : MonoBehaviour
     {
         public Vector3 direction, worldPosition;
         public Quaternion rotation, worldRotation;
-        // 1. use this to store deltaRotation 
-        // 2. and update the angle via ADD instead of MULTIPLICATION,
-        //    to avoid quaternion float err accumulation and finally turns to invalid qauternion.
         public float spinAngle; 
     }
 
@@ -43,31 +43,26 @@ public class FractalGPU : MonoBehaviour
         rotation = rotations[childIndex]
     };
 
-    // Change it to a function that will update whenever the object is enabled.
-    // If we use Awake, this function will only be called once, at the beginning of the scene loading.
-    //void Awake()
     void OnEnable() 
     {
-        // S1. create a vector
-        parts = new FractalPart[depth][ ];
-        matrices = new Matrix4x4[depth][ ];
+        
+        parts = new NativeArray<FractalPart>[depth];
+        matrices = new NativeArray<Matrix4x4>[depth];
         matricesBuffers = new ComputeBuffer[depth];
         int stride = 16 * 4;
         for (int i = 0, length = 1; i < parts.Length; i++, length *= 5)
         {
-            parts[i] = new FractalPart[length];
-            matrices[i]= new Matrix4x4[length];
-            matricesBuffers[i] = new ComputeBuffer(length, stride);    // we'll send data to GPU level-by-level
+            parts[i] = new NativeArray<FractalPart>(length, Allocator.Persistent);
+            matrices[i]= new NativeArray<Matrix4x4>(length, Allocator.Persistent);
+            matricesBuffers[i] = new ComputeBuffer(length, stride);  
         }
 
 
-
-        // S2. then init elements 
-        parts[0][0]=CreatePart(0);       // root node is NOT a child of any node.
-        for (int li = 1; li < parts.Length; li++)  // level idx
+        parts[0][0]=CreatePart(0);      
+        for (int li = 1; li < parts.Length; li++)  
         {
-            FractalPart[] levelParts = parts[li];   // take the init. memory blocks and fill it
-            for (int fpi = 0; fpi < levelParts.Length; fpi+=5)  // first place idx
+            NativeArray<FractalPart> levelParts = parts[li];   
+            for (int fpi = 0; fpi < levelParts.Length; fpi+=5) 
             {
                 for (int ci = 0; ci < 5; ci++)
                 {
@@ -77,15 +72,10 @@ public class FractalGPU : MonoBehaviour
         }
 
 
-
-        //if (propertyBlock == null)
-        //{
-        //    propertyBlock = new MaterialPropertyBlock();
-        //}
-        propertyBlock ??= new MaterialPropertyBlock();  // a simplified version of above
+        propertyBlock ??= new MaterialPropertyBlock();  
     }
 
-    // This function makes it possible, that we can change some params in inspector in play mode.
+    
     private void OnValidate()
     {
         if (parts != null && enabled)
@@ -99,10 +89,10 @@ public class FractalGPU : MonoBehaviour
     {
         for (int i = 0; i < matricesBuffers.Length; i++)
         {
-            matricesBuffers[i].Release();   // clear the buffer level-by-level
+            matricesBuffers[i].Release();   
+            parts[i].Dispose();
+            matrices[i].Dispose();
         }
-        parts = null;
-        matrices = null;
         matricesBuffers = null;
     }
 
@@ -122,15 +112,14 @@ public class FractalGPU : MonoBehaviour
             rootPart.worldPosition, rootPart.worldRotation, objectScale * Vector3.one
         );
 
-        // Root node cannot rotate(actually it can rotate, but that will make no difference).
-        // Thus we don't have to update root node.
+
         float scale = objectScale;
         for (int li = 1; li < parts.Length; li++)
         {
             scale *= 0.5f;
-            FractalPart[] levelParts = parts[li];
-            FractalPart[] parentParts = parts[li - 1];
-            Matrix4x4[] levelMatrices = matrices[li];
+            NativeArray<FractalPart> levelParts = parts[li];
+            NativeArray<FractalPart> parentParts = parts[li - 1];
+            NativeArray<Matrix4x4> levelMatrices = matrices[li];
             for (int fpi = 0; fpi < levelParts.Length; fpi++)
             {
                 FractalPart parent = parentParts[fpi / 5];
@@ -152,18 +141,12 @@ public class FractalGPU : MonoBehaviour
 
 
 
-
-
         var bounds = new Bounds(rootPart.worldPosition, 3f * objectScale * Vector3.one);
-        // 1. Send data to GPU after finish the calculation
-        // 2. And then call the function for procedural drawing
+
         for (int i = 0; i < matricesBuffers.Length; i++)
         {
             ComputeBuffer buffer = matricesBuffers[i];
             buffer.SetData(matrices[i]);
-            //material.SetBuffer(matricesId, buffer);
-            //Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count);
-
             propertyBlock.SetBuffer(matricesId, buffer);
             Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count, propertyBlock);
         }
