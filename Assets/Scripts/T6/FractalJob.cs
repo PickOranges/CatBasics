@@ -14,8 +14,28 @@ public class FractalJob : MonoBehaviour
     [SerializeField]
     Material material;
 
+    struct UpdateFractalLevelJob : IJobFor
+    {
+        public float spinAngleDelta;
+        public float scale;
+        [ReadOnly] public NativeArray<FractalPart> parents;
+        public NativeArray<FractalPart> parts;
+        [WriteOnly] public NativeArray<Matrix4x4> matrices;
+        public void Execute(int i) 
+        {
+            FractalPart parent = parents[i / 5];
+            FractalPart part = parts[i];
+            part.spinAngle += spinAngleDelta;
+            part.worldRotation = parent.worldRotation * (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f));
+            part.worldPosition = parent.worldPosition + parent.worldRotation * (1.5f * scale * part.direction);
+            parts[i] = part;
+            matrices[i] = Matrix4x4.TRS(part.worldPosition, part.worldRotation, scale * Vector3.one);
+        }
+    }
+
     NativeArray<FractalPart>[] parts;
     NativeArray<Matrix4x4>[] matrices;
+
     ComputeBuffer[] matricesBuffers;
     static readonly int matricesId = Shader.PropertyToID("_Matrices"); 
     static MaterialPropertyBlock propertyBlock;
@@ -75,7 +95,6 @@ public class FractalJob : MonoBehaviour
         propertyBlock ??= new MaterialPropertyBlock();  
     }
 
-    
     private void OnValidate()
     {
         if (parts != null && enabled)
@@ -117,26 +136,23 @@ public class FractalJob : MonoBehaviour
         for (int li = 1; li < parts.Length; li++)
         {
             scale *= 0.5f;
-            NativeArray<FractalPart> levelParts = parts[li];
-            NativeArray<FractalPart> parentParts = parts[li - 1];
-            NativeArray<Matrix4x4> levelMatrices = matrices[li];
-            for (int fpi = 0; fpi < levelParts.Length; fpi++)
+            var job = new UpdateFractalLevelJob
             {
-                FractalPart parent = parentParts[fpi / 5];
-                FractalPart part = levelParts[fpi];
-                
-                part.spinAngle += spinAngleDelta;
-                part.worldRotation = parent.worldRotation *
-                                      (part.rotation * Quaternion.Euler(0f, part.spinAngle, 0f));
+                spinAngleDelta = spinAngleDelta,
+                scale = scale,
+                parents = parts[li - 1],
+                parts = parts[li],
+                matrices = matrices[li]
+            };
 
-                part.worldPosition =
-                    parent.worldPosition +
-                    parent.worldRotation * (1.5f * scale * part.direction);
-                levelMatrices[fpi] = Matrix4x4.TRS(
-                    part.worldPosition, part.worldRotation, scale * Vector3.one
-                );
-                levelParts[fpi] = part;
-            }
+            //for (int fpi = 0; fpi < parts[li].Length; fpi++)
+            //{
+            //    job.Execute(fpi);   // replace the update step with the job's Execute function invokation.
+            //}
+
+            // Don't have to invoke Execute everytime, let the job system do it.
+            // NOTE: if you don't call Complete, the jobs will not be done automatically.    
+            job.Schedule(parts[li].Length, default).Complete();  
         }
 
 
