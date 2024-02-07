@@ -137,25 +137,14 @@ public class FractalJob : MonoBehaviour
         for (int li = 1; li < parts.Length; li++)
         {
             scale *= 0.5f;
-            var job = new UpdateFractalLevelJob
+            jobHandle = new UpdateFractalLevelJob
             {
                 spinAngleDelta = spinAngleDelta,
                 scale = scale,
                 parents = parts[li - 1],
                 parts = parts[li],
                 matrices = matrices[li]
-            };
-
-            //for (int fpi = 0; fpi < parts[li].Length; fpi++)
-            //{
-            //    job.Execute(fpi);   // replace the update step with the job's Execute function invokation.
-            //}
-
-            // Don't have to invoke Execute everytime, let the job system do it.
-            // NOTE: if you don't call Complete, the jobs will not be done automatically.    
-            //job.Schedule(parts[li].Length, default).Complete();  
-
-            jobHandle = job.Schedule(parts[li].Length, default);
+            }.Schedule(parts[li].Length, default);
         }
         jobHandle.Complete();
 
